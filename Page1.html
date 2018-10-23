@@ -1,0 +1,93 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Page 0 Basic</title>
+    <style type="text/css">
+        body {
+            background-color: green;
+            margin-bottom: 50px;
+            min-height: 150px;
+            margin-left: 0px;
+            margin-right: 0px;
+        }
+
+        header {
+            background-color: powderblue;
+            color: white;
+            height: 50px;
+        }
+
+        footer {
+            background-color: black;
+            color: white;
+            bottom: 0;
+            height: 50px;
+            width: 100%;
+            position: absolute;
+            margin-left: 0px;
+            padding-left: 0px;
+
+        }
+
+        footer2 {
+            background-color: black;
+            color: white;
+            position: -webkit-sticky;
+            /* Safari */
+            position: sticky;
+            bottom: 0;
+            background-color: green;
+            border: 2px solid #4CAF50;
+            position: absolute;
+
+        }
+
+        h1 {
+            color: blue;
+        }
+
+        .rdback {
+            width: 300px;
+            background-color: aqua;
+        }
+
+        .inputCol {
+            width: 300px;
+            background-color: blueviolet;
+        }
+    </style>
+    <script>
+        function updateInput(event, id) {
+            var source = document.getElementById(event.currentTarget.id);
+            document.getElementById(id).innerHTML = source.value;
+        }
+    </script>
+</head>
+<!-- comments in HTML look like this   view in browser via file:///D:/bitbucket/nodesites/Page0.html -->
+
+<body>
+    <header>header
+        <button id="btn1" name="button" onclick="alert('OUTCH')">Click me
+            <svg aria-hidden="true" viewBox="0 0 10 10">
+                <path d="m7.4 8.8-2.4-1.3-2.4 1.3.46-2.7-2-1.9 2.7-.39 1.2-2.5 1.2 2.5 2.7.39-1.9 1.9z" /></svg>
+        </button>
+        <button id="btn2" name="button2" , onclick="onButton2()">
+            <svg width="50px" height="50px">text
+                <circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" />
+            </svg>
+        </button>
+    </header>
+    <h1>Heading 1x</h1>
+    <div><span class="inputCol"><input id="i1" type="text" onkeyup="updateInput(event , 's1')"></span><span id="s1" class="rdback">No Input yet</span></div>
+    <div><span class="inputCol"><input id="i2" type="email" onkeyup="updateInput(event , 's2')"></span><span id="s2" class="rdback">No Input yet</span></div>
+    <div>
+        <p class="inputCol"><input id="i2" type="email" onkeyup="updateInput(event, 's2')"></p>
+        <p id="s2" class="rdback">No Input yet</p>
+    </div>
+    <footer>footer</footer>
+</body>
+
+<script> console.log("this code runs after the body is loaded"); </script>
+
+</html>

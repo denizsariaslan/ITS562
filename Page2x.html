@@ -1,0 +1,335 @@
+
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>SSD TEST PAGE</title>
+
+    <script>
+
+        var UriArbiterV1Hosts = "http://ems.amat.com/arbiter/v1/hosts";
+		var HostsPreProduction = [];
+        var HostsProduction = [];
+        var HostsUnassigned = [];
+        var ProductionServices = [];
+        var ProductionServiceStates = [];
+        var totaltestPoints = 0;
+
+		function LoadArbiter(arbiterData){
+			if(arbiterData){
+                HostsPreProduction = [];
+                HostsProduction = [];
+                HostsUnassigned = [];
+                ProductionServices = [];
+                ProductionServiceStates = [];
+                totaltestPoints = 0;
+                let productionHosts = [];
+
+				for(i = 0; i < arbiterData.length; i++){
+                    let currentHost = arbiterData[i];
+                    if(currentHost.ServiceDomain == "Non-Production"){
+                        HostsPreProduction.push(currentHost);
+                      
+                    }
+                    else if(currentHost.ServiceDomain== "Production"){
+                        HostsProduction.push(currentHost);
+                        let hostDescription = currentHost.Name + ":";
+                        for(s=0; s < currentHost.Services.length; s++){
+                            ProductionServices.push(currentHost.Services[s]);
+                            hostDescription += currentHost.Services[s].Name + ",";
+                        }
+                        productionHosts.push(hostDescription);
+                    }
+                    else{
+                        HostsUnassigned.push(currentHost);
+                    }
+				
+					console.log(currentHost.Name + ":" + currentHost.ServiceDomain);
+				}
+                DisplayJSONobjectAsList(productionHosts,"hosts");
+                DisplayJSONobject(ProductionServices,"services")
+                disableNavButton("reloadArbiter", false);
+			}
+			else{
+			    fetchWithTimeout(UriArbiterV1Hosts,5000,"json",LoadArbiter);
+			}
+        }
+        
+        function disableNavButton(buttonID, disable) {
+            if(!disable){
+                document.getElementById(buttonID).removeAttribute("disabled");
+            }
+            else{
+                document.getElementById(buttonID).setAttribute("disabled", disable);
+            }
+                
+        }
+        var testPointsComplete = 0;
+        function recordEndpointResult(endpointResult)
+        {
+            testPointsComplete++;
+            if(totaltestPoints - testPointsComplete <= 0)
+            {
+                disableNavButton("navTestServiceEndpoints", false);
+            }
+            document.getElementById("endpointtest").innerHTML += "<li>" +
+                "<a target=\"_blank\" href=\"" + endpointResult.uri + "\" >" + endpointResult.uri + "</a> = " + endpointResult.state + ":"  + endpointResult.status + "</li>";
+        }
+        function onEndpointSuccess(responseData, uri){
+            let endpoint = {};
+            endpoint.uri = uri;
+            endpoint.state = "OK";
+            endpoint.status = 200;
+            recordEndpointResult(endpoint);
+            ProductionServiceStates.push(endpoint);
+
+        }
+        function onEndpointFail(requestStatus,uri){
+            let endpoint = {};
+            endpoint.uri = uri;
+            endpoint.state = "FAIL";
+            endpoint.status = "";
+            recordEndpointResult(endpoint);
+            ProductionServiceStates.push(endpoint);
+
+        }
+        function onNotFoundFunction(statusResult, uri){
+            let endpoint = {};
+            endpoint.uri = uri;
+            endpoint.state = "WARNING";
+            endpoint.status = "";
+            switch(statusResult){
+                case 400:
+                    endpoint.status = "400:BAD REQUEST";
+                break;
+                case 401:
+                    endpoint.status = "401:ACCESS DENIED";
+                break;
+                case 404:
+                    endpoint.status = "404:NOT FOUND";
+                break;
+                case 500:
+                    endpoint.status = "500:Sever Error";
+                break;
+                case 0:
+                    return;
+                break;
+            }
+            recordEndpointResult(endpoint);
+            
+        }
+        function onEndpointTimeout(uri,timeout,progressEvent){
+            let endpoint = {};
+            endpoint.uri = uri;
+            endpoint.state = "TIMED OUT";
+            endpoint.status = "";
+            recordEndpointResult(endpoint);
+            ProductionServiceStates.push(endpoint);
+        }
+
+        function TestEndpoint(endpoint, timeout, format,useCredentials){
+            if(!format)
+                format = "json";
+            if(!timeout)
+                timeout = 10000;
+            totaltestPoints++;
+			fetchWithTimeout(endpoint,timeout,format,onEndpointSuccess,onNotFoundFunction, onEndpointFail, onEndpointTimeout, useCredentials);
+		}
+
+		function fetchWithTimeout( url, timeout, responseType, successFunction,notFoundFunction, failFunction, timeoutFunction, useCredentials ) {
+            if(typeof(responseType)=="undefined")
+				responseType = "json";
+			var verb = "GET";
+            if(typeof(timeout)=="undefined")
+		       timeout = 5000;
+                
+            if(typeof(useCredentials)=="undefined")
+                useCredentials = true;
+
+            var request = new XMLHttpRequest();
+            request.withCredentials = useCredentials;
+
+            request.ontimeout = function(progressEvent){
+                if(timeoutFunction){
+                    request.ontimeout = timeoutFunction(url, timeout,progressEvent);
+                }
+                else{
+                    alert("FAILED TO GET URL IN TIMELY MANNER - try reload" + url);
+                }
+            }
+           
+			request.onload = function(progressEvt){
+              //  console.log(progressEvt.status);
+            }
+            request.onprogress = function(progressEvt){
+              //  console.log(progressEvt.status);
+            }
+            request.onerror = function(progressEvent){
+                var message = "FAILED to fetch " + url;
+                
+				//if(progressEvent)
+                //    message +=": --"+  progressEvent;
+                if(failFunction){
+                    failFunction(message, url);
+                }
+                else{
+                     alert(message);
+                }
+            }
+           
+		
+			
+		
+			request.open(verb, url);
+			request.timeout = timeout;
+			request.responseType = responseType;
+			request.onreadystatechange = function () {
+                if(request.readyState === 4 ){
+                    console.log(request.status);
+                    switch(request.status){
+                        case 200:
+                        successFunction(request.response, url);
+                        break;
+                       
+                        default:
+                        notFoundFunction(request.status,url)
+                        console.log(request.response);
+                       
+                    }
+                }
+            }
+			
+			request.send();
+    	
+		}
+
+        function DisplayText( textObject, elementID){
+			document.getElementById(elementID).innerText = textObject;
+		}
+		function DisplayJSONobject( jsonObj, elementID){
+			var prettyJson = JSON.stringify(jsonObj, null, 2);
+			console.log(prettyJson);
+			DisplayText( prettyJson,elementID);
+        }
+        
+        function DisplayJSONobjectAsList(arrayOfstring, elementID){
+            let innerHTML = "";
+            for(item in arrayOfstring){
+                innerHTML += "<li>"+ arrayOfstring[item] + "</li>";
+
+            }
+            document.getElementById(elementID).innerHTML = innerHTML;
+        }
+		
+		function ShowURIinNewWindow(uri, title)	{
+			window.open(uri,title);
+		}
+    
+        function reportEndpointHealth(){
+
+        }
+        function testEndpoints(){
+            document.getElementById("endpointtest").innerHTML = "";
+            
+            for(i = 0; i < ProductionServices.length; i++){
+                let currentservice = ProductionServices[i];
+                if(currentservice.Name == "FileManagerAPI"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "version");//non standard includes version in endpoint
+                    TestEndpoint(ProductionServices[i].Endpoint + "backup/current");//non standard includes version in endpoint
+                    
+                }
+                else if(currentservice.Name == "PackageManagement"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "version");//non standard includes version in endpoint
+                }
+                else if(currentservice.Name == "PostBuildTestAPI"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "All");  //non standard includes version in endpoint
+                }
+                else if(currentservice.Name == "HealthMonitor"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "v1/SystemStatus/");  
+                }
+                else if(currentservice.Name == "UDAMan"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "v1/Tools/", 5000, "json", false);  
+                }
+                else if(currentservice.Name == "JobQueue"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "v1/Schedules/", 5000, "document",false);  
+                }
+                else if(currentservice.Name == "Commits"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "approvers/me/", 5000, "json", false);  //non standard endpoitn =
+                }
+                else if(currentservice.Name == "SSDConfigBuilder"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "Logs/", 5000, "json",false);   //non standard endpoitn = ??????????????
+                    
+                }
+                else if(currentservice.Name == "SSDEngineBuilder"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "Logs/", 5000, "json",false);   //non standard endpoitn = ??????????????
+                    
+                }
+                else if(currentservice.Name == "ImplanterDataRetriever"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "");   //non standard endpoitn = ??????????????
+                }
+                else if(currentservice.Name == "WebletPostBuildTest"){
+                    TestEndpoint(ProductionServices[i].Endpoint + "Logs", 5000, "json",false);     //non standard endpoitn = ??????????????
+                }
+                else{
+                    console.log("Unrecognized Service name " + currentservice.Name);
+                    TestEndpoint(ProductionServices[i].Endpoint);   //non standard endpoitn = ??????????????
+           
+                }
+            }
+        }
+
+		function OnNav(arg){
+            console.log(this);
+            console.log("Clicked OnNav with arg " + arg)
+            disableNavButton(arg, true);
+            if(arg=="reloadArbiter"){
+                LoadArbiter();
+               
+            }
+            else if (arg =="navTestServiceEndpoints" ){
+               
+                testEndpoints();
+            }
+
+            
+		}
+
+	
+	    function updateView(){
+            LoadArbiter();
+        }
+		
+	</script>
+</head>
+
+<body>
+    <!--KEEP THIS SPAN AT TOP with class prodstate it will be blank when production, otherwise caustion with non production warning-->
+    <span class="prodstate"></span>
+    <header class="prodstate">
+            <input type="button" id="reloadArbiter" value="Update Arbiter Data" onclick="OnNav('reloadArbiter')" />
+            <input type="button" id="navTestServiceEndpoints" value="Test Service Endpoints" onclick="OnNav('navTestServiceEndpoints')" />
+    </header>
+
+    <h1>Endpoint Tests </h1>
+    <ul id="endpointtest">
+        <li>Click Test Endpoints to populate..</li>
+    </ul>
+
+    <h1>Production Hosts</h1>
+    <hr>
+    <ul id="hosts"></ul>
+    <hr>
+
+    <h1>Production Services</h1>
+    <hr>
+    <pre id="services"></pre>
+    <hr>
+   
+
+
+    <script>
+        //KEEP THIS AT VERY END OF FILE
+        updateView();
+    </script>

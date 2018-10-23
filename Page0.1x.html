@@ -1,0 +1,52 @@
+
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    
+    <title>Page 0 Basic</title>
+
+    <style type="text/css">
+        h1 {color:blue;}
+        h2 {color:red;}
+        p {color:green;}
+    </style>
+
+    <script>
+        console.log("This code executes before body is rendered");
+        
+        
+        window.onload = function(evt){
+            console.log("window.onload called" + evt);
+            
+        }
+     
+      
+	</script>
+</head>
+
+<body>
+    <!-- comments in HTML look like this -->
+  
+    <header class="prodstate">
+            <input type="button" id="reloadArbiter" value="Update Arbiter Data" onclick="OnNav('reloadArbiter')" />
+            <input type="button" id="navTestServiceEndpoints" value="Test Service Endpoints" onclick="OnNav('navTestServiceEndpoints')" />
+    </header>
+
+
+    <h1>List 1</h1>
+    <hr>
+    <ul id="list1"></ul>
+    <hr>
+
+
+    <script>
+        //KEEP THIS AT VERY END OF FILE
+        console.log("this code runs after the body is loaded");
+        //end body and html tag aren't required...
+    </script>
+
+
+</body>
+
+</html>

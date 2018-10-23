@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    
+    <title>Page 1 Basic</title>
+
+    <style type="text/css">
+        h1 {color:blue;}
+        h2 {color:red;}
+        p {color:green;}
+    </style>
+
+    <script>
+        console.log("This code executes before body is rendered");
+        
+        
+        window.onload = function(evt){
+            console.log("window.onload called" + evt);
+        }
+     
+        
+        function DisplayStringArrayAsList(arrayOfstring, elementID){
+            let innerHTML = "";
+            for(item in arrayOfstring){
+                innerHTML += "<li>"+ arrayOfstring[item] + "</li>";
+
+            }
+            document.getElementById(elementID).innerHTML = innerHTML;
+        }
+		
+		function ShowURIinNewWindow(uri, title)	{
+			window.open(uri,title);
+		}
+    
+		function OnNav(arg){
+            console.log(this);
+            console.log("Clicked OnNav with arg " + arg)
+            disableNavButton(arg, true);
+            if(arg=="reloadArbiter"){
+                LoadArbiter();
+               
+            }
+            else if (arg =="navTestServiceEndpoints" ){
+               
+                testEndpoints();
+            }
+
+            
+		}
+
+	
+	 
+		
+	</script>
+</head>
+
+<body>
+    <!-- comments in HTML look like this -->
+    <span class="prodstate"></span>
+    <header class="prodstate">
+            <input type="button" id="reloadArbiter" value="Update Arbiter Data" onclick="OnNav('reloadArbiter')" />
+            <input type="button" id="navTestServiceEndpoints" value="Test Service Endpoints" onclick="OnNav('navTestServiceEndpoints')" />
+    </header>
+
+    <h1>Endpoint Tests </h1>
+    <ul id="endpointtest">
+        <li>Click Test Endpoints to populate..</li>
+    </ul>
+
+    <h1>Production Hosts</h1>
+    <hr>
+    <ul id="hosts"></ul>
+    <hr>
+
+    <h1>Production Services</h1>
+    <hr>
+    <pre id="services"></pre>
+    <hr>
+   
+
+
+    <script>
+        //KEEP THIS AT VERY END OF FILE
+        console.log("this code runs after the body is loaded");
+        //end body and html tag aren't required...
+    </script>
+
+
+</body>
+</html>
